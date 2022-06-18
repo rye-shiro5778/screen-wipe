@@ -104,49 +104,26 @@ app.once("ready", async () => {
 
   const iconPath = path.resolve(
     __dirname,
+    "icons",
     `icon16.${process.platform === "win32" ? "ico" : "png"}`
   );
   tray = new Tray(iconPath);
   tray.setContextMenu(
-    Menu.buildFromTemplate(
-      isDev
-        ? [
-            {
-              label: "リロード",
-              click: () => {
-                mainWindow.reload();
-              },
-            },
-            {
-              label: "Developer Tools",
-              click: () => {
-                mainWindow.webContents.openDevTools();
-              },
-            },
-            {
-              type: "separator",
-            },
-            {
-              label: "Exit",
-              role: "quit",
-            },
-          ]
-        : [
-            {
-              label: "Reload",
-              click: () => {
-                mainWindow.reload();
-              },
-            },
-            {
-              type: "separator",
-            },
-            {
-              label: "Exit",
-              role: "quit",
-            },
-          ]
-    )
+    Menu.buildFromTemplate([
+      {
+        label: "Reload",
+        click: () => {
+          mainWindow.reload();
+        },
+      },
+      {
+        type: "separator",
+      },
+      {
+        label: "Exit",
+        role: "quit",
+      },
+    ])
   );
 
   await new Promise((resolve) => setTimeout(resolve, 3500));
