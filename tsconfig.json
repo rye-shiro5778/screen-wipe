@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ESNEXT",
+    "module": "ESNEXT",
+    "moduleResolution": "Node",
+    "esModuleInterop": true,
+    "lib": ["DOM", "ESNEXT"],
+    "jsx": "react",
+    "strict": true,
+    "sourceMap": true,
+    "outDir": "dist"
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "ts-node": {
+    "compilerOptions": {
+      "target": "ES2015",
+      "module": "CommonJS"
+    }
+  }
+}
