@@ -1,25 +1,18 @@
 {
-  "name": "screen-wiper",
+  "name": "screen-wipe",
   "version": "1.0.0",
   "description": "",
   "main": "dist/main.js",
   "scripts": {
-    "predev": "rimraf dist && mkdir dist && cp icon16.png ./dist/icon16.png",
-    "dev": "run-p dev:*",
-    "dev:main": "cross-env WEBPACK_ENV=\"development\" webpack --config webpack.config.main.ts --watch",
-    "dev:render": "cross-env WEBPACK_ENV=\"development\" webpack --config webpack.config.render.ts --watch",
-    "dev:electron": "wait-on ./dist/renderer/splash.html && cross-env NODE_ENV=\"development\" ./node_modules/.bin/electron .",
-    "build": "run-s predev build:main build:render build:{1} --",
-    "build:main": "cross-env WEBPACK_ENV=\"development\" webpack --config webpack.config.main.ts",
-    "build:render": "cross-env WEBPACK_ENV=\"development\" webpack --config webpack.config.render.ts",
-    "build:mac": "wait-on ./dist/renderer/splash.html && electron-builder --mac --x64",
-    "build:win": "wait-on ./dist/renderer/splash.html && electron-builder --win --x64"
+    "dev": "sh scripts/dev.sh",
+    "build:win": "sh scripts/build.sh win",
+    "build:mac": "sh scripts/build.sh mac"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "build": {
-    "appId": "com.electron.wiper-screen",
+    "appId": "com.electron.wipe-screen",
     "directories": {
       "output": "./builder"
     },
@@ -32,11 +25,11 @@
       "target": [
         "dmg"
       ],
-      "icon": "./icon256.png"
+      "icon": "./icons/icon512.png"
     },
     "win": {
       "target": "nsis",
-      "icon": "./icon256.png"
+      "icon": "./icons/icon512.png"
     },
     "nsis": {
       "oneClick": false,
@@ -60,8 +53,6 @@
     "electron-store": "^8.0.2",
     "html-webpack-plugin": "^5.5.0",
     "mini-css-extract-plugin": "^2.6.0",
-    "npm-run-all": "^4.1.5",
-    "rimraf": "^3.0.2",
     "sass": "^1.52.3",
     "sass-loader": "^13.0.0",
     "style-loader": "^3.3.1",
