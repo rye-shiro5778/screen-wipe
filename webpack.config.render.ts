@@ -11,7 +11,7 @@ const config = {
   },
   entry: {
     app: "./src/renderer/app/index.tsx",
-    splash: "./src/renderer/splash/index.tsx",
+    splash: "./src/renderer/splash/index.ts",
   },
   output: {
     path: path.resolve(__dirname, "dist", "renderer"),

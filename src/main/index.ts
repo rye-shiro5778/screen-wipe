@@ -10,30 +10,23 @@ import {
   shell,
   Tray,
 } from "electron";
-import electronReload from "electron-reload";
 import path from "path";
 const isDev = process.env.NODE_ENV === "development";
+const iconPath = path.resolve(
+  __dirname,
+  "icons",
+  `icon16.${process.platform === "win32" ? "ico" : "png"}`
+);
 let tray: Tray | null = null;
-
 let splashWindow: BrowserWindow;
 let mainWindow: BrowserWindow;
 
-if (isDev) {
-  // console.log("electron", electronReload);
-  // require("electron-reload")(__dirname, {
-  //   electron: path.resolve(
-  //     __dirname,
-  //     process.platform === "win32"
-  //       ? "../node_modules/electron/dist/electron.exe"
-  //       : "../node_modules/.bin/electron"
-  //   ),
-  // });
-}
-
 const createSplash = () => {
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width, height } = primaryDisplay.workAreaSize;
   splashWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    width: 300,
+    height: 300,
     frame: false,
     resizable: false,
     transparent: true,
@@ -41,7 +34,7 @@ const createSplash = () => {
     skipTaskbar: true,
     alwaysOnTop: true,
   });
-
+  splashWindow.setPosition(width - 400, height - 300);
   splashWindow.loadFile(path.resolve(__dirname, "renderer", "splash.html"));
 
   splashWindow.once("ready-to-show", () => {
@@ -52,7 +45,6 @@ const createSplash = () => {
 const createMainWindow = () => {
   const primaryDisplay = screen.getPrimaryDisplay();
   const { width, height } = primaryDisplay.workAreaSize;
-
   mainWindow = new BrowserWindow({
     width: 310,
     height: 310,
@@ -67,17 +59,6 @@ const createMainWindow = () => {
   });
   mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   mainWindow.setPosition(width - 400, height - 300);
-
-  const handleUrlOpen = async (event: Electron.Event, url: string) => {
-    if (url.match(/^http/)) {
-      event.preventDefault();
-      shell.openExternal(url);
-    }
-  };
-
-  mainWindow.webContents.on("will-navigate", handleUrlOpen);
-  mainWindow.webContents.on("new-window", handleUrlOpen);
-
   mainWindow.loadFile(path.resolve(__dirname, "renderer", "app.html"));
 };
 
@@ -87,34 +68,87 @@ if (!gotTheLock) {
   app.quit();
 }
 
-app.once("ready", async () => {
-  //   globalShortcut.register("Alt+Space", async () => {
-  //     mainWindow.webContents.send("reset");
-  //     if (mainWindow.isVisible()) {
-  //       mainWindow.hide();
-  //     } else {
-  //       mainWindow.show();
-  //       mainWindow.focus();
-  //     }
-  //   })
+const registerGlobalShortcut = () => {
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width, height } = primaryDisplay.workAreaSize;
+  const globalShortcutArry: {
+    content: string;
+    cmd: string;
+    callback: () => void;
+  }[] = [
+    {
+      content: "アプリの停止",
+      cmd: "CommandOrControl+Shift+Q",
+      callback: () => app.quit(),
+    },
+    {
+      content: "カメラのON/OFF",
+      cmd: "CommandOrControl+Shift+S",
+      callback: () => mainWindow.webContents.send("switchCamera"),
+    },
+    {
+      content: "上移動",
+      cmd: "CommandOrControl+Shift+UP",
+      callback: () => {
+        const [x, y] = mainWindow.getPosition();
+        if (y > 20 && y < height + 20) {
+          mainWindow.setPosition(x, y - 50);
+        }
+      },
+    },
+    {
+      content: "下移動",
+      cmd: "CommandOrControl+Shift+Down",
+      callback: () => {
+        const [x, y] = mainWindow.getPosition();
+        if (y > 20 && y < height + 20) {
+          mainWindow.setPosition(x, y + 50);
+        }
+      },
+    },
+    {
+      content: "左移動",
+      cmd: "CommandOrControl+Shift+Left",
+      callback: () => {
+        const [x, y] = mainWindow.getPosition();
+        if (x > 20 && x < width + 20) {
+          mainWindow.setPosition(x - 50, y);
+        }
+      },
+    },
+    {
+      content: "右移動",
+      cmd: "CommandOrControl+Shift+Right",
+      callback: () => {
+        const [x, y] = mainWindow.getPosition();
+        if (x > 20 && x < width + 20) {
+          mainWindow.setPosition(x + 50, y);
+        }
+      },
+    },
+  ];
 
-  // createSplash();
-  createMainWindow();
-  // mainWindow.hide();
+  globalShortcutArry.forEach((obj) => {
+    const { cmd, content, callback } = obj;
+    const ret = globalShortcut.register(cmd, callback);
+    if (!ret) {
+      console.log(`${cmd}:${content}の登録に失敗`);
+    }
+  });
+};
 
-  const iconPath = path.resolve(
-    __dirname,
-    "icons",
-    `icon16.${process.platform === "win32" ? "ico" : "png"}`
-  );
+const createTray = () => {
   tray = new Tray(iconPath);
   tray.setContextMenu(
     Menu.buildFromTemplate([
       {
         label: "Reload",
-        click: () => {
-          mainWindow.reload();
-        },
+        click: () => mainWindow.reload(),
+      },
+      {
+        label: "Github",
+        click: () =>
+          shell.openExternal("https://github.com/rye-shiro5778/screen-wipe"),
       },
       {
         type: "separator",
@@ -125,11 +159,24 @@ app.once("ready", async () => {
       },
     ])
   );
+};
 
-  await new Promise((resolve) => setTimeout(resolve, 3500));
+app.once("ready", async () => {
+  // 初期設定
+  registerGlobalShortcut();
+  createTray();
 
-  //   splashWindow.hide();
-  //   splashWindow.destroy();
+  //
+  createSplash();
+
+  createMainWindow();
+  mainWindow.hide();
+
+  await new Promise((resolve) => setTimeout(resolve, 2800));
+
+  splashWindow.hide();
+  splashWindow.destroy();
+  mainWindow.show();
 
   if (process.platform !== "win32") {
     powerMonitor.once("shutdown", () => {
@@ -138,10 +185,7 @@ app.once("ready", async () => {
   }
 });
 
-app.on("browser-window-blur", () => {
-  // mainWindow.webContents.send("reset");
-  // mainWindow.hide();
-});
+app.on("browser-window-blur", () => {});
 
 app.once("window-all-closed", () => {
   globalShortcut.unregisterAll();
@@ -152,8 +196,6 @@ process.once("exit", () => {
 });
 
 // ipc通信定義
-// ipcMain.handle(
-//   "getLinks",
-//   (event: Electron.IpcMainInvokeEvent, inputVal: string) =>
-//     searchLinks(inputVal)
-// );
+ipcMain.handle("switchCamera", (event: Electron.IpcMainInvokeEvent) => {});
+ipcMain.handle("opacityDown", (event: Electron.IpcMainInvokeEvent) => {});
+ipcMain.handle("opacityUp", (event: Electron.IpcMainInvokeEvent) => {});
